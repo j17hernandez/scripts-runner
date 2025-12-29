@@ -1,12 +1,12 @@
 {
   "name": "scripts-runner",
   "displayName": "Scripts Runner",
-  "description": "Gestiona y ejecuta scripts personalizados desde un archivo .scriptsrc en tu proyecto",
+  "description": "Extension que permite gestionar y ejecutar scripts personalizados desde un archivo .scriptsrc en tu proyecto",
   "version": "0.0.1",
-  "publisher": "your-publisher-name",
+  "publisher": "j17hernandez",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/scripts-runner"
+    "url": "https://github.com/j17hernandez/scripts-runner"
   },
   "license": "MIT",
   "engines": {
