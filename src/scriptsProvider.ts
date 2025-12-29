@@ -25,12 +25,25 @@ export class ScriptItem extends vscode.TreeItem {
 export class CategoryItem extends vscode.TreeItem {
     constructor(
         public readonly categoryName: string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState
+        public readonly projectName?: string,
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Expanded
     ) {
         super(categoryName, collapsibleState);
         
         this.contextValue = 'category';
         this.iconPath = new vscode.ThemeIcon('folder');
+    }
+}
+
+export class ProjectItem extends vscode.TreeItem {
+    constructor(
+        public readonly projectName: string,
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Expanded
+    ) {
+        super(projectName, collapsibleState);
+        
+        this.contextValue = 'project';
+        this.iconPath = new vscode.ThemeIcon('folder-opened');
     }
 }
 
@@ -55,43 +68,112 @@ export class ScriptsProvider implements vscode.TreeDataProvider<vscode.TreeItem>
             return this.getRootElements();
         }
         
+        if (element instanceof ProjectItem) {
+            return this.getCategoriesForProject(element.projectName);
+        }
+        
         if (element instanceof CategoryItem) {
-            return this.getScriptsForCategory(element.categoryName);
+            return this.getScriptsForCategory(element.categoryName, element.projectName);
         }
         
         return Promise.resolve([]);
     }
 
     private async getRootElements(): Promise<vscode.TreeItem[]> {
-        const categories = this.scriptsManager.getScriptsByCategory();
+        const scripts = this.scriptsManager.getScripts();
         
-        if (categories.size === 0) {
+        if (scripts.length === 0) {
             return [];
         }
         
-        if (categories.size === 1 && categories.has('General')) {
-            const scripts = categories.get('General')!;
-            return scripts.map(script => 
-                new ScriptItem(script, vscode.TreeItemCollapsibleState.None)
-            );
+        // Obtener proyectos únicos
+        const projects = new Set(scripts.map(s => s.projectName).filter(p => p));
+        
+        // Si solo hay un proyecto, mostrar directamente las categorías
+        if (projects.size === 1) {
+            const projectName = Array.from(projects)[0]!;
+            const projectScripts = scripts.filter(s => s.projectName === projectName);
+            
+            // Agrupar por categoría
+            const categories = new Map<string, Script[]>();
+            for (const script of projectScripts) {
+                const category = script.category || 'General';
+                if (!categories.has(category)) {
+                    categories.set(category, []);
+                }
+                categories.get(category)!.push(script);
+            }
+            
+            // Si solo hay una categoría "General", mostrar scripts directamente
+            if (categories.size === 1 && categories.has('General')) {
+                return categories.get('General')!.map(script => 
+                    new ScriptItem(script, vscode.TreeItemCollapsibleState.None)
+                );
+            }
+            
+            // Mostrar categorías
+            const items: vscode.TreeItem[] = [];
+            for (const [categoryName] of categories) {
+                items.push(new CategoryItem(categoryName, projectName));
+            }
+            return items;
         }
         
+        // Si hay múltiples proyectos, mostrar proyectos en el nivel raíz
         const items: vscode.TreeItem[] = [];
-        for (const [categoryName] of categories) {
-            items.push(new CategoryItem(
-                categoryName,
-                vscode.TreeItemCollapsibleState.Expanded
-            ));
+        for (const projectName of Array.from(projects)) {
+            if (projectName) {
+                items.push(new ProjectItem(projectName));
+            }
         }
         
         return items;
     }
 
-    private async getScriptsForCategory(categoryName: string): Promise<vscode.TreeItem[]> {
-        const categories = this.scriptsManager.getScriptsByCategory();
-        const scripts = categories.get(categoryName) || [];
+    private async getCategoriesForProject(projectName: string): Promise<vscode.TreeItem[]> {
+        const scripts = this.scriptsManager.getScripts();
+        const projectScripts = scripts.filter(s => s.projectName === projectName);
         
-        return scripts.map(script => 
+        // Agrupar por categoría
+        const categories = new Map<string, Script[]>();
+        for (const script of projectScripts) {
+            const category = script.category || 'General';
+            if (!categories.has(category)) {
+                categories.set(category, []);
+            }
+            categories.get(category)!.push(script);
+        }
+        
+        // Si solo hay una categoría "General", mostrar scripts directamente
+        if (categories.size === 1 && categories.has('General')) {
+            return categories.get('General')!.map(script => 
+                new ScriptItem(script, vscode.TreeItemCollapsibleState.None)
+            );
+        }
+        
+        // Mostrar categorías
+        const items: vscode.TreeItem[] = [];
+        for (const [categoryName] of categories) {
+            items.push(new CategoryItem(categoryName, projectName));
+        }
+        
+        return items;
+    }
+    
+    private async getScriptsForCategory(categoryName: string, projectName?: string): Promise<vscode.TreeItem[]> {
+        const scripts = this.scriptsManager.getScripts();
+        let filteredScripts = scripts;
+        
+        if (projectName) {
+            filteredScripts = scripts.filter(s => s.projectName === projectName);
+        }
+        
+        const categoryScripts = filteredScripts.filter(s => {
+            const category = s.category || 'General';
+            return category === categoryName;
+        });
+        
+        return categoryScripts.map(script => 
             new ScriptItem(script, vscode.TreeItemCollapsibleState.None)
         );
     }

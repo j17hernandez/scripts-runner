@@ -7,6 +7,8 @@ export interface Script {
     command: string;
     description?: string;
     category?: string;
+    projectPath?: string;
+    projectName?: string;
 }
 
 export interface ScriptsConfig {
@@ -16,6 +18,7 @@ export interface ScriptsConfig {
 export class ScriptsManager {
     private scripts: Script[] = [];
     private scriptsFilePath: string | undefined;
+    private scriptsFiles: Map<string, string> = new Map();
 
     constructor() {
         this.reload();
@@ -28,26 +31,107 @@ export class ScriptsManager {
     reload(): void {
         this.scripts = [];
         this.scriptsFilePath = undefined;
+        this.scriptsFiles.clear();
 
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders || workspaceFolders.length === 0) {
             return;
         }
 
+        // Buscar archivos .scriptsrc en la raíz de cada workspace folder
+        const rootScriptsFiles: Array<{path: string, folderName: string, folderPath: string}> = [];
         for (const folder of workspaceFolders) {
             const filePath = path.join(folder.uri.fsPath, '.scriptsrc');
             if (fs.existsSync(filePath)) {
-                this.scriptsFilePath = filePath;
-                try {
-                    const content = fs.readFileSync(filePath, 'utf-8');
-                    const config = this.parseScriptsFile(content);
-                    this.scripts = config.scripts;
-                } catch (error) {
-                    console.error('Error reading .scriptsrc:', error);
-                    vscode.window.showErrorMessage(`Error al leer .scriptsrc: ${error}`);
-                }
-                break;
+                rootScriptsFiles.push({
+                    path: filePath,
+                    folderName: path.basename(folder.uri.fsPath),
+                    folderPath: folder.uri.fsPath
+                });
             }
+        }
+
+        // Si solo hay un archivo .scriptsrc en la raíz, usar el comportamiento simple
+        if (rootScriptsFiles.length === 1) {
+            const file = rootScriptsFiles[0];
+            this.scriptsFilePath = file.path;
+            try {
+                const content = fs.readFileSync(file.path, 'utf-8');
+                const config = this.parseScriptsFile(content);
+                this.scripts = config.scripts.map(script => ({
+                    ...script,
+                    projectPath: file.folderPath,
+                    projectName: file.folderName
+                }));
+                this.scriptsFiles.set(file.folderName, file.path);
+            } catch (error) {
+                console.error('Error reading .scriptsrc:', error);
+                vscode.window.showErrorMessage(`Error al leer .scriptsrc: ${error}`);
+            }
+            return;
+        }
+
+        // Si no hay archivos en la raíz, buscar en subdirectorios
+        if (rootScriptsFiles.length === 0) {
+            for (const folder of workspaceFolders) {
+                this.findScriptsInSubdirectories(folder.uri.fsPath);
+            }
+        } else {
+            // Si hay múltiples archivos en la raíz, cargarlos todos con categorías
+            for (const file of rootScriptsFiles) {
+                try {
+                    const content = fs.readFileSync(file.path, 'utf-8');
+                    const config = this.parseScriptsFile(content);
+                    const scriptsWithProject = config.scripts.map(script => ({
+                        ...script,
+                        projectPath: file.folderPath,
+                        projectName: file.folderName
+                    }));
+                    this.scripts.push(...scriptsWithProject);
+                    this.scriptsFiles.set(file.folderName, file.path);
+                } catch (error) {
+                    console.error(`Error reading .scriptsrc in ${file.folderName}:`, error);
+                }
+            }
+        }
+
+        // Establecer el primer archivo encontrado como el principal
+        if (this.scriptsFiles.size > 0) {
+            this.scriptsFilePath = Array.from(this.scriptsFiles.values())[0];
+        }
+    }
+
+    private findScriptsInSubdirectories(rootPath: string): void {
+        try {
+            const entries = fs.readdirSync(rootPath, { withFileTypes: true });
+            
+            for (const entry of entries) {
+                if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+                    const subPath = path.join(rootPath, entry.name);
+                    const scriptsFilePath = path.join(subPath, '.scriptsrc');
+                    
+                    if (fs.existsSync(scriptsFilePath)) {
+                        try {
+                            const content = fs.readFileSync(scriptsFilePath, 'utf-8');
+                            const config = this.parseScriptsFile(content);
+                            const projectName = entry.name;
+                            
+                            const scriptsWithProject = config.scripts.map(script => ({
+                                ...script,
+                                projectPath: subPath,
+                                projectName: projectName
+                            }));
+                            
+                            this.scripts.push(...scriptsWithProject);
+                            this.scriptsFiles.set(projectName, scriptsFilePath);
+                        } catch (error) {
+                            console.error(`Error reading .scriptsrc in ${entry.name}:`, error);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error scanning subdirectories:', error);
         }
     }
 

@@ -32,10 +32,10 @@ export function activate(context: vscode.ExtensionContext) {
                     { placeHolder: 'Selecciona un script para ejecutar' }
                 );
                 if (selected) {
-                    runScript(selected.script.name, selected.script.command);
+                    runScript(selected.script.name, selected.script.command, selected.script.projectPath);
                 }
             } else {
-                runScript(item.script.name, item.script.command);
+                runScript(item.script.name, item.script.command, item.script.projectPath);
             }
         })
     );
@@ -176,8 +176,16 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(watcher);
 }
 
-function runScript(name: string, command: string) {
-    const terminal = vscode.window.createTerminal(`Script: ${name}`);
+function runScript(name: string, command: string, projectPath?: string) {
+    const terminalOptions: vscode.TerminalOptions = {
+        name: `Script: ${name}`
+    };
+    
+    if (projectPath) {
+        terminalOptions.cwd = projectPath;
+    }
+    
+    const terminal = vscode.window.createTerminal(terminalOptions);
     terminal.show();
     terminal.sendText(command);
 }
