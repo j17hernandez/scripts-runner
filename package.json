@@ -1,6 +1,6 @@
 {
-  "name": "scripts-runner",
-  "displayName": "Scripts Runner",
+  "name": "scriptsrc-runner",
+  "displayName": "ScriptsRC Runner",
   "description": "Extension que permite gestionar y ejecutar scripts personalizados desde un archivo .scriptsrc en tu proyecto",
   "version": "0.0.1",
   "publisher": "j17hernandez",
@@ -9,6 +9,7 @@
     "url": "https://github.com/j17hernandez/scripts-runner"
   },
   "license": "MIT",
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -134,6 +135,7 @@
     "@typescript-eslint/parser": "^6.0.0",
     "@vscode/vsce": "^3.7.1",
     "eslint": "^8.0.0",
+    "sharp": "^0.34.5",
     "typescript": "^5.0.0"
   }
 }
