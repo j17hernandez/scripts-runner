@@ -1,0 +1,38 @@
+{
+  "scripts": [
+    {
+      "name": "build",
+      "command": "npm run build",
+      "description": "Compila el proyecto",
+      "category": "Build"
+    },
+    {
+      "name": "watch",
+      "command": "npm run watch",
+      "description": "Compila en modo watch",
+      "category": "Build"
+    },
+    {
+      "name": "test",
+      "command": "npm test",
+      "description": "Ejecuta los tests"
+    },
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "description": "Ejecuta el linter"
+    },
+    {
+      "name": "deploy-staging",
+      "command": "npm run deploy:staging",
+      "description": "Despliega a staging",
+      "category": "Deploy"
+    },
+    {
+      "name": "deploy-prod",
+      "command": "npm run deploy:prod",
+      "description": "Despliega a producción",
+      "category": "Deploy"
+    }
+  ]
+}

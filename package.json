@@ -1,0 +1,136 @@
+{
+  "name": "scripts-runner",
+  "displayName": "Scripts Runner",
+  "description": "Gestiona y ejecuta scripts personalizados desde un archivo .scriptsrc en tu proyecto",
+  "version": "0.0.1",
+  "publisher": "your-publisher-name",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/scripts-runner"
+  },
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "workspaceContains:.scriptsrc"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "scriptsRunner.runScript",
+        "title": "Run Script",
+        "icon": "$(play)"
+      },
+      {
+        "command": "scriptsRunner.addScript",
+        "title": "Add Script",
+        "icon": "$(add)"
+      },
+      {
+        "command": "scriptsRunner.editScript",
+        "title": "Edit Script",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "scriptsRunner.deleteScript",
+        "title": "Delete Script",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "scriptsRunner.refresh",
+        "title": "Refresh Scripts",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "scriptsRunner.createScriptsFile",
+        "title": "Create .scriptsrc File",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "scriptsRunner.openScriptsFile",
+        "title": "Open .scriptsrc File",
+        "icon": "$(go-to-file)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "scriptsRunner",
+          "title": "Scripts Runner",
+          "icon": "$(terminal)"
+        }
+      ]
+    },
+    "views": {
+      "scriptsRunner": [
+        {
+          "id": "scriptsRunnerView",
+          "name": "Scripts",
+          "icon": "$(terminal)",
+          "contextualTitle": "Scripts Runner"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "scriptsRunnerView",
+        "contents": "No se encontró archivo .scriptsrc en el workspace.\n[Crear .scriptsrc](command:scriptsRunner.createScriptsFile)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "scriptsRunner.addScript",
+          "when": "view == scriptsRunnerView",
+          "group": "navigation"
+        },
+        {
+          "command": "scriptsRunner.refresh",
+          "when": "view == scriptsRunnerView",
+          "group": "navigation"
+        },
+        {
+          "command": "scriptsRunner.openScriptsFile",
+          "when": "view == scriptsRunnerView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "scriptsRunner.runScript",
+          "when": "view == scriptsRunnerView && viewItem == script",
+          "group": "inline"
+        },
+        {
+          "command": "scriptsRunner.editScript",
+          "when": "view == scriptsRunnerView && viewItem == script",
+          "group": "1_modification"
+        },
+        {
+          "command": "scriptsRunner.deleteScript",
+          "when": "view == scriptsRunnerView && viewItem == script",
+          "group": "1_modification"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}
